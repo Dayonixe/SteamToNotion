@@ -74,7 +74,7 @@ The script will run and you should see the following lines displayed, for exampl
 ## Result
 
 Before:
-<img src="docs/Result_before" alt="before" />
+<img src="docs/Result_before.png" alt="before" />
 
 After:
-<img src="docs/Result_after" alt="after" />
+<img src="docs/Result_after.png" alt="after" />
