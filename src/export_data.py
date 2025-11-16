@@ -150,6 +150,95 @@ def search_app_id_by_name(name: str):
     return best_app_id
 
 
+def get_rawg_data(game_name: str):
+    """
+    Recherche les données d'un jeu dans RAWG
+    :param game_name: Nom du jeu
+    :return: playtime, genres, tags
+    """
+    url = (
+        f"https://api.rawg.io/api/games"
+        f"?search={game_name}"
+        f"&key={RAWG_API_KEY}"
+    )
+
+    try:
+        res = requests.get(url).json()
+    except Exception as e:
+        print(f"⚠️ Erreur RAWG : {e}")
+        return None, [], []
+
+    if "results" not in res or len(res["results"]) == 0:
+        print(f"⚠️ No res")
+        return None, [], []
+
+    game = res["results"][0]  # meilleur match automatique RAWG
+
+    playtime = game.get("playtime")  # durée médiane communautaire
+
+    genres = [g["name"] for g in game.get("genres", [])]
+    tags = [t["name"] for t in game.get("tags", [])]
+
+    return playtime, genres, tags
+
+
+def estimate_hltb_from_rawg(rawg_playtime, genres, tags):
+    """
+    Calcul une estimation de la durée d'un jeu à partir de la durée extraite de RAWG
+    :param rawg_playtime: Durée du jeu de RAWG
+    :param genres: Liste des genres du jeu de RAWG
+    :param tags: Liste des tags du jeu de RAWG
+    :return: Estimation de la durée
+    """
+    if rawg_playtime is None or rawg_playtime <= 0:
+        return None
+
+    genres = [g.lower() for g in genres]
+    tags = [t.lower() for t in tags]
+
+    # Ratio basé sur RAWG -> HLTB
+    ratio = 2.5
+
+    # Protection sur les jeux courts
+    if rawg_playtime <= 2:
+        return round(rawg_playtime * 1.2, 1)
+    elif rawg_playtime <= 3:
+        return round(rawg_playtime * 1.5, 1)
+    elif rawg_playtime <= 5:
+        return round(rawg_playtime * 2.0, 1)
+
+    # Ratios selon genre principal
+    if any(g in genres for g in ["rpg", "role-playing"]):
+        ratio = 5.0
+    elif any(g in genres for g in ["strategy"]):
+        ratio = 3.0
+    elif any(g in genres for g in ["adventure"]):
+        ratio = 2.5
+    elif any(g in genres for g in ["action"]):
+        ratio = 2.2
+    elif any(g in genres for g in ["indie"]):
+        ratio = 1.8
+    elif any(g in genres for g in ["platformer"]):
+        ratio = 1.5
+    elif any(g in genres for g in ["roguelike"]):
+        ratio = 2.5
+
+    # survival sandbox long / survival horror court
+    if any(t in tags for t in ["open world", "sandbox", "crafting", "exploration", "base building"]):
+        ratio *= 3.5
+    elif any(t in tags for t in ["survival", "horror"]):
+        ratio *= 1.2
+
+    # Simulation / factory games
+    if any(g in genres for g in ["simulation"]):
+        ratio = max(ratio, 3.5)
+
+    if any(t in tags for t in ["automation", "factory", "management"]):
+        ratio = max(ratio, 4.0)
+
+    return round(rawg_playtime * ratio, 1)
+
+
 
 ######################################################
 #               Fonctions Principales                #
@@ -238,6 +327,13 @@ def get_steam_game_details(app_id: int):
     if "genres" in info:
         genres = [g["description"] for g in info["genres"]]
 
+    # Durée du jeu
+    if released:
+        rawg_playtime, rawg_genres, rawg_tags = get_rawg_data(name)
+        hltb_time = estimate_hltb_from_rawg(rawg_playtime, rawg_genres, rawg_tags)
+    else:
+        hltb_time = None
+
     # Note du jeu
     metacritic_score = None
     if "metacritic" in info and "score" in info["metacritic"]:
@@ -254,6 +350,7 @@ def get_steam_game_details(app_id: int):
         "released": released,
         "release_date": release_date,
         "genres": genres,
+        "hltb_time": hltb_time,
         "metacritic_score": metacritic_score,
         "cover_image": wallpaper,
         "icon_image": icon
@@ -285,6 +382,9 @@ def update_notion_page(page_id, game):
         },
         "Genres": {
             "multi_select": [{"name": genre} for genre in game["genres"]]
+        },
+        "Estimated duration": {
+            "number": float(game["hltb_time"]) if game["hltb_time"] is not None else None
         },
         "Metacritic": {
             "number": int(game["metacritic_score"]) if game["metacritic_score"] is not None else None
