@@ -176,8 +176,11 @@ def get_rawg_data(game_name: str):
 
     playtime = game.get("playtime")  # durée médiane communautaire
 
-    genres = [g["name"] for g in game.get("genres", [])]
-    tags = [t["name"] for t in game.get("tags", [])]
+    rawg_genres = game.get("genres") or []
+    rawg_tags = game.get("tags") or []
+
+    genres = [g.get("name") for g in rawg_genres if isinstance(g, dict) and "name" in g]
+    tags = [t.get("name") for t in rawg_tags if isinstance(t, dict) and "name" in t]
 
     return playtime, genres, tags
 
