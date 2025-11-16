@@ -334,13 +334,13 @@ if __name__ == "__main__":
         if platform_prop.get("select"):
             platform_value = platform_prop["select"]["name"]
 
-        # Lecture de la colonne "ID"
-        app_id = get_app_id_for_page(page)
-
         # Si Platform != Steam, la page est ignorée
         if platform_value != "Steam":
             print(f"⏭️ Page ignorée ({page_id}) — Platform = {platform_value}")
             continue
+
+        # Lecture de la colonne "ID"
+        app_id = get_app_id_for_page(page)
 
         # S'il n'y a pas d'ID du jeu, la page est ignorée
         if not app_id:
