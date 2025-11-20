@@ -53,7 +53,7 @@ It is important to note that the estimated duration of a game is calculated in t
 
 To run the script in a Linux or PowerShell terminal:
 ```bash
-python[3] [path/to/]export_data.py
+python[3] -m src.export_data
 ```
 
 The script will run and you should see the following lines displayed, for example:
