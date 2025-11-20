@@ -5,6 +5,8 @@ import json
 from datetime import datetime
 import re
 from difflib import SequenceMatcher
+import time
+import random
 
 
 ######################################################
@@ -21,6 +23,8 @@ notion_headers = {
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28"
 }
+
+RAWG_CACHE = {}
 
 
 
@@ -71,12 +75,16 @@ def is_sequel(title: str):
     :return: Booléen
     """
     title = title.lower()
-    return (
-        " ii" in title or
-        " 2" in title or
-        " iii" in title or
-        " 3" in title
-    )
+
+    # Romans II / III / IV
+    if re.search(r"\b(ii|iii|iv|v)\b", title):
+        return True
+
+    # Chiffres isolés ≠ années (1800, 2077)
+    if re.search(r"\b([1-9]|10)\b(?!\d)", title):
+        return True
+
+    return False
 
 
 def search_app_id_by_name(name: str):
@@ -150,31 +158,40 @@ def search_app_id_by_name(name: str):
     return best_app_id
 
 
-def get_rawg_data(game_name: str):
+def sanitize_title(title: str):
     """
-    Recherche les données d'un jeu dans RAWG
-    :param game_name: Nom du jeu
+    Nettoie le titre pour améliorer la recherche RAWG
+    :param title: Titre à nettoyer
+    :return: Titre sain
+    """
+    if not title:
+        return ""
+    t = title.lower()
+    t = t.replace(":", " ")
+    t = re.sub(r"[^\w\s]", "", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+
+def safe_get_json(response):
+    """
+    Eviter de crash si RAWG renvoie du HTML
+    :param response: Réponse de RAWG
+    :return: Tri des réponses
+    """
+    try:
+        return response.json()
+    except Exception:
+        return None
+
+
+def extract_rawg_fields(game):
+    """
+    Extraction sécurisée des champs RAWG (safe parsing)
+    :param game: Nom du jeu
     :return: playtime, genres, tags
     """
-    url = (
-        f"https://api.rawg.io/api/games"
-        f"?search={game_name}"
-        f"&key={RAWG_API_KEY}"
-    )
-
-    try:
-        res = requests.get(url).json()
-    except Exception as e:
-        print(f"⚠️ Erreur RAWG : {e}")
-        return None, [], []
-
-    if "results" not in res or len(res["results"]) == 0:
-        print(f"⚠️ No res")
-        return None, [], []
-
-    game = res["results"][0]  # meilleur match automatique RAWG
-
-    playtime = game.get("playtime")  # durée médiane communautaire
+    playtime = game.get("playtime")  # durée médiane
 
     rawg_genres = game.get("genres") or []
     rawg_tags = game.get("tags") or []
@@ -183,6 +200,105 @@ def get_rawg_data(game_name: str):
     tags = [t.get("name") for t in rawg_tags if isinstance(t, dict) and "name" in t]
 
     return playtime, genres, tags
+
+
+def best_rawg_match(results, original_name):
+    """
+    TODO
+    :param results:
+    :param original_name:
+    :return:
+    """
+    original_norm = normalize(original_name)
+
+    best = None
+    best_score = 0
+
+    for game in results:
+        name = game.get("name", "")
+        score = similarity(original_norm, normalize(name))
+        if score > best_score:
+            best_score = score
+            best = game
+
+    return best if best_score >= 0.45 else None
+
+
+def get_rawg_data(game_name: str, steam_app_id: int = None):
+    """
+    Recherche robuste des données d'un jeu dans RAWG
+    :param game_name: Nom du jeu
+    :param steam_app_id:
+    :return: playtime, genres, tags
+    """
+    cache_key = f"{game_name}|{steam_app_id}"
+    if cache_key in RAWG_CACHE:
+        return RAWG_CACHE[cache_key]
+
+    def query_rawg(search_value, retries=3):
+        url = (
+            f"https://api.rawg.io/api/games"
+            f"?search={search_value}"
+            f"&key={RAWG_API_KEY}"
+        )
+        for attempt in range(retries):
+            try:
+                headers = {"User-Agent": "SteamToNotion/1.0"}
+                resp = requests.get(url, timeout=8, headers=headers)
+                data = safe_get_json(resp)
+                if data:
+                    return data
+            except Exception:
+                pass
+
+            time.sleep((2 ** attempt) + random.random())  # backoff
+
+        print(f"⚠️ RAWG failed after {retries} attempts for search='{search_value}'")
+        return None
+
+    # Try 1: Query direct avec le nom original
+    res = query_rawg(game_name)
+
+    if not res or "results" not in res or not isinstance(res["results"], list):
+        print("⚠️ RAWG: Réponse vide / HTML / structure invalide")
+    else:
+        if len(res["results"]) > 0:
+            match = best_rawg_match(res["results"], game_name)
+            if match:
+                RAWG_CACHE[cache_key] = extract_rawg_fields(match)
+                return RAWG_CACHE[cache_key]
+
+    # Try 2: Query avec nom nettoyé
+    cleaned_name = sanitize_title(game_name)
+    if cleaned_name != game_name:
+        res = query_rawg(cleaned_name)
+        if res and "results" in res and len(res["results"]) > 0:
+            match = best_rawg_match(res["results"], game_name)
+            if match:
+                RAWG_CACHE[cache_key] = extract_rawg_fields(match)
+                return RAWG_CACHE[cache_key]
+
+    # Try 3: Query “slug style”
+    slug = cleaned_name.replace(" ", "-")
+    res = query_rawg(slug)
+    if res and "results" in res and len(res["results"]) > 0:
+        match = best_rawg_match(res["results"], game_name)
+        if match:
+            RAWG_CACHE[cache_key] = extract_rawg_fields(match)
+            return RAWG_CACHE[cache_key]
+
+    # Try 4: Recherche via Steam App ID (RAWG comprend ça !)
+    if steam_app_id:
+        res = query_rawg(f"steam {steam_app_id}")
+        if res and "results" in res and len(res["results"]) > 0:
+            match = best_rawg_match(res["results"], game_name)
+            if match:
+                RAWG_CACHE[cache_key] = extract_rawg_fields(match)
+                return RAWG_CACHE[cache_key]
+
+    # Échec total RAWG → renvoyer valeurs vides
+    print(f"⚠️ RAWG n’a retourné aucun résultat pour : {game_name}")
+    return None, [], []
 
 
 def estimate_hltb_from_rawg(rawg_playtime, genres, tags):
@@ -332,7 +448,7 @@ def get_steam_game_details(app_id: int):
 
     # Durée du jeu
     if released:
-        rawg_playtime, rawg_genres, rawg_tags = get_rawg_data(name)
+        rawg_playtime, rawg_genres, rawg_tags = get_rawg_data(name, app_id)
         hltb_time = estimate_hltb_from_rawg(rawg_playtime, rawg_genres, rawg_tags)
     else:
         hltb_time = None
@@ -417,7 +533,12 @@ def update_notion_page(page_id, game):
     if response.status_code >= 400:
         print("⚠️ Erreur Notion :", response.text)
 
-    return response.json()
+    try:
+        return response.json()
+    except Exception:
+        print("❌ Notion a renvoyé une réponse non JSON. Réponse brute :")
+        print(response.text)
+        return None
 
 
 
@@ -439,7 +560,7 @@ if __name__ == "__main__":
 
         # Si Platform != Steam, la page est ignorée
         if platform_value != "Steam":
-            print(f"⏭️ Page ignorée ({page_id}) — Platform = {platform_value}")
+            print(f"⏭️ Page ignorée ({page_id}) — Platform = {platform_value}\n")
             continue
 
         # Lecture de la colonne "ID"
@@ -464,3 +585,6 @@ if __name__ == "__main__":
         update_notion_page(page_id, game_data)
 
         print(f"✅ Page mise à jour : {page_id}\n")
+
+        if game_data["released"]:
+            time.sleep(0.25)  # Evite rate limiting
