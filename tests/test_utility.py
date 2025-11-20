@@ -1,13 +1,13 @@
 import pytest
 from unittest.mock import patch
 
-from src.export_data import (
+from src.utils import (
     convert_steam_date_to_iso,
     normalize,
     similarity,
-    is_sequel,
-    search_app_id_by_name
+    is_sequel
 )
+from src.steam_api import search_app_id_by_name
 
 
 
@@ -78,7 +78,7 @@ def test_is_sequel_with_iii():
 #########################################
 #     search_app_id_by_name (mocked)    #
 #########################################
-@patch("src.export_data.requests.get")
+@patch("src.steam_api.requests.get")
 def test_search_app_id_by_name_exact_match(mock_get):
     mock_get.return_value.json.return_value = [
         {"name": "Hades", "appid": 1145360},
@@ -88,7 +88,7 @@ def test_search_app_id_by_name_exact_match(mock_get):
     assert search_app_id_by_name("Hades") == 1145360
 
 
-@patch("src.export_data.requests.get")
+@patch("src.steam_api.requests.get")
 def test_search_app_id_by_name_startswith(mock_get):
     mock_get.return_value.json.return_value = [
         {"name": "Hades II", "appid": 1145350},
@@ -99,7 +99,7 @@ def test_search_app_id_by_name_startswith(mock_get):
     assert search_app_id_by_name("Hades") == 1145350
 
 
-@patch("src.export_data.requests.get")
+@patch("src.steam_api.requests.get")
 def test_search_app_id_by_name_similarity(mock_get):
     mock_get.return_value.json.return_value = [
         {"name": "Hadez", "appid": 111111},
@@ -110,13 +110,13 @@ def test_search_app_id_by_name_similarity(mock_get):
     assert search_app_id_by_name("Hades") == 111111
 
 
-@patch("src.export_data.requests.get")
+@patch("src.steam_api.requests.get")
 def test_search_app_id_by_name_no_results(mock_get):
     mock_get.return_value.json.return_value = []
     assert search_app_id_by_name("Hades") is None
 
 
-@patch("src.export_data.requests.get")
+@patch("src.steam_api.requests.get")
 def test_search_app_id_by_name_invalid_json(mock_get):
     mock_get.return_value.json.side_effect = ValueError("Invalid JSON")
     assert search_app_id_by_name("Hades") is None
