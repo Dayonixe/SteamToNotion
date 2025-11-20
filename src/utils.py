@@ -29,7 +29,9 @@ def similarity(a: str, b: str) -> float:
 
     :return: Ratio de similarité entre 0 et 1
     """
-    return SequenceMatcher(None, a, b).ratio()
+    a_norm = a.lower() if isinstance(a, str) else ""
+    b_norm = b.lower() if isinstance(b, str) else ""
+    return SequenceMatcher(None, a_norm, b_norm).ratio()
 
 
 def convert_steam_date_to_iso(date_str: Optional[str]) -> Optional[str]:
