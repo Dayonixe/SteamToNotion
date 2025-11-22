@@ -58,19 +58,19 @@ python[3] -m src.export_data
 
 The script will run and you should see the following lines displayed, for example:
 ```
-🔍 Récupération Steam pour app_id = 1172620
-📥 Données récupérées : {'app_id': 1172620, 'name': 'Sea of Thieves: 2025 Edition', 'price': 39.99, 'released': True, 'release_date': '2020-06-03', 'genres': ['Action', 'Adventure'], 'hltb_time': None, 'metacritic_score': None, 'cover_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172620/library_hero.jpg', 'icon_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172620/logo.png'}
-✅ Page mise à jour : xxxxxxxxxxxxxxxx
+🔍 Steam recovery for app_id = 1172620
+📥 Data retrieved : {'app_id': 1172620, 'name': 'Sea of Thieves: 2025 Edition', 'price': 39.99, 'released': True, 'release_date': '2020-06-03', 'genres': ['Action', 'Adventure'], 'hltb_time': None, 'metacritic_score': None, 'cover_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172620/library_hero.jpg', 'icon_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172620/logo.png'}
+✅ Page updated : xxxxxxxxxxxxxxxx
 
-🔍 Récupération Steam pour app_id = 1203180
-📥 Données récupérées : {'app_id': 1203180, 'name': 'Breakwaters: Crystal Tides', 'price': 16.79, 'released': True, 'release_date': '2021-12-09', 'genres': ['Action', 'Adventure', 'Indie', 'Simulation', 'Early Access'], 'hltb_time': 13.2, 'metacritic_score': None, 'cover_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203180/library_hero.jpg', 'icon_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203180/logo.png'}
-✅ Page mise à jour : xxxxxxxxxxxxxxxx
+🔍 Steam recovery for app_id = 1203180
+📥 Data retrieved : {'app_id': 1203180, 'name': 'Breakwaters: Crystal Tides', 'price': 16.79, 'released': True, 'release_date': '2021-12-09', 'genres': ['Action', 'Adventure', 'Indie', 'Simulation', 'Early Access'], 'hltb_time': 13.2, 'metacritic_score': None, 'cover_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203180/library_hero.jpg', 'icon_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203180/logo.png'}
+✅ Page updated : xxxxxxxxxxxxxxxx
 
-⏭️ Page ignorée (xxxxxxxxxxxxxxxx) — Platform = Epic Games
+⏭️ Page ignored (xxxxxxxxxxxxxxxx) — Platform = Epic Games
 
-🔍 Récupération Steam pour app_id = 113200
-📥 Données récupérées : {'app_id': 113200, 'name': 'The Binding of Isaac', 'price': 4.99, 'released': True, 'release_date': '2011-09-28', 'genres': ['Action', 'Adventure', 'Indie', 'RPG'], 'hltb_time': 10.0, 'metacritic_score': 84, 'cover_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/113200/library_hero.jpg', 'icon_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/113200/logo.png'}
-✅ Page mise à jour : xxxxxxxxxxxxxxxx
+🔍 Steam recovery for app_id = 113200
+📥 Data retrieved : {'app_id': 113200, 'name': 'The Binding of Isaac', 'price': 4.99, 'released': True, 'release_date': '2011-09-28', 'genres': ['Action', 'Adventure', 'Indie', 'RPG'], 'hltb_time': 10.0, 'metacritic_score': 84, 'cover_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/113200/library_hero.jpg', 'icon_image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/113200/logo.png'}
+✅ Page updated : xxxxxxxxxxxxxxxx
 
 [...]
 ```

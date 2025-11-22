@@ -7,11 +7,11 @@ import requests
 
 def normalize(text: Optional[str]) -> str:
     """
-    Normalise un texte pour comparaison.
+    Normalises text for comparison.
 
-    :param text: Texte d’entrée
+    :param text: Input text
 
-    :return: Texte normalisé (minuscules, alphanumériques, espaces)
+    :return: Standard text (lowercase letters, alphanumeric characters, spaces)
     """
     if not text:
         return ""
@@ -22,12 +22,12 @@ def normalize(text: Optional[str]) -> str:
 
 def similarity(a: str, b: str) -> float:
     """
-    Calcule un score de similarité entre deux chaînes.
+    Calculates a similarity score between two strings.
 
-    :param a: Première chaîne
-    :param b: Deuxième chaîne
+    :param a: First string
+    :param b: Second string
 
-    :return: Ratio de similarité entre 0 et 1
+    :return: Similarity ratio between 0 and 1
     """
     a_norm = a.lower() if isinstance(a, str) else ""
     b_norm = b.lower() if isinstance(b, str) else ""
@@ -36,12 +36,12 @@ def similarity(a: str, b: str) -> float:
 
 def convert_steam_date_to_iso(date_str: Optional[str]) -> Optional[str]:
     """
-    Convertit une date Steam en format ISO AAAA-MM-JJ.
-    Exemple : "25 Sep, 2025" -> "2025-09-25"
+    Converts a Steam date to ISO format YYYY-MM-DD.
+    Example: "25 Sep, 2025" -> "2025-09-25"
 
-    :param date_str: Date Steam
+    :param date_str: Steam date
 
-    :return: Date formatée en ISO ou None si invalide
+    :return: Date formatted in ISO or None if invalid
     """
     try:
         # Steam format
@@ -53,11 +53,11 @@ def convert_steam_date_to_iso(date_str: Optional[str]) -> Optional[str]:
 
 def sanitize_title(title: Optional[str]) -> str:
     """
-    Nettoie un titre pour une recherche RAWG plus fiable.
+    Cleans up a title for more reliable RAWG searching.
 
-    :param title: Titre original
+    :param title: Original title
 
-    :return: Titre nettoyé
+    :return: Cleaned title
     """
     if not title:
         return ""
@@ -70,11 +70,11 @@ def sanitize_title(title: Optional[str]) -> str:
 
 def safe_get_json(response: requests.Response) -> Optional[Any]:
     """
-    Retourne response.json() en sécurisant les erreurs HTML/texte.
+    Returns response.json() with HTML/text error handling.
 
-    :param response: Réponse HTTP
+    :param response: HTTP response
 
-    :return: JSON parsé, ou None si impossible
+    :return: Parsed JSON or None if impossible
     """
     try:
         return response.json()
@@ -84,20 +84,20 @@ def safe_get_json(response: requests.Response) -> Optional[Any]:
 
 def is_sequel(title: Optional[str]) -> bool:
     """
-    Détecte si un titre semble être une suite (II, III, IV, 2, 3…).
-    La fonction ignore les années (ex: 2077, 1998).
+    Detects whether a title appears to be a sequel (II, III, IV, 2, 3, etc.).
+    The function ignores years (e.g. 2077, 1998).
 
-    :param title: Titre du jeu
+    :param title: Game title
 
-    :return: True si c’est une suite, False sinon
+    :return: True if it is a suite, False otherwise
     """
     title = title.lower()
 
-    # Romains II / III / IV
+    # Romans II / III / IV
     if re.search(r"\b(ii|iii|iv|v)\b", title):
         return True
 
-    # Chiffres isolés ≠ années (1800, 2077)
+    # Isolated figures != years (1800, 2077)
     if re.search(r"\b([1-9]|10)\b(?!\d)", title):
         return True
 

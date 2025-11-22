@@ -9,12 +9,12 @@ from src.notion_api import (
 )
 
 
-############################################################
-#                   get_notion_pages                       #
-############################################################
+##########################################################
+#  get_notion_pages                                      #
+##########################################################
 @patch("src.notion_api.requests.post")
 def test_get_notion_pages_single_page(mock_post):
-    """La DB renvoie une seule page sans pagination."""
+    """The DB returns a single page without pagination."""
     mock_post.return_value.json.return_value = {
         "results": [{"id": "page1"}],
         "has_more": False
@@ -28,9 +28,9 @@ def test_get_notion_pages_single_page(mock_post):
 
 @patch("src.notion_api.requests.post")
 def test_get_notion_pages_multiple_pages(mock_post):
-    """Test pagination correcte (has_more = True)."""
+    """Correct pagination test (has_more = True)."""
 
-    # 1ère réponse (page 1)
+    # First reply (page 1)
     first = MagicMock()
     first.json.return_value = {
         "results": [{"id": "page1"}],
@@ -38,7 +38,7 @@ def test_get_notion_pages_multiple_pages(mock_post):
         "next_cursor": "cursor123"
     }
 
-    # 2e réponse (page 2)
+    # Second answer (page 2)
     second = MagicMock()
     second.json.return_value = {
         "results": [{"id": "page2"}],
@@ -54,11 +54,11 @@ def test_get_notion_pages_multiple_pages(mock_post):
     assert mock_post.call_count == 2
 
 
-############################################################
-#                   get_app_id_for_page                    #
-############################################################
+##########################################################
+#  get_app_id_for_page                                   #
+##########################################################
 def test_get_app_id_for_page_existing_id():
-    """Si l’ID est déjà présent dans Notion, on le renvoie directement."""
+    """If the ID is already present in Notion, it is returned directly."""
     page = {
         "properties": {
             "ID": {"number": 1234}
@@ -69,7 +69,7 @@ def test_get_app_id_for_page_existing_id():
 
 @patch("src.notion_api.search_app_id_by_name")
 def test_get_app_id_for_page_from_name(mock_search):
-    """Si l’ID n’est pas présent, on cherche via le nom du jeu."""
+    """If the ID is not present, we search by the name of the game."""
     mock_search.return_value = 5678
 
     page = {
@@ -85,7 +85,7 @@ def test_get_app_id_for_page_from_name(mock_search):
 
 @patch("src.notion_api.search_app_id_by_name")
 def test_get_app_id_for_page_no_search_result(mock_search):
-    """Aucun match Steam → retourne None."""
+    """No Steam match -> returns None."""
     mock_search.return_value = None
 
     page = {
@@ -99,17 +99,17 @@ def test_get_app_id_for_page_no_search_result(mock_search):
 
 
 def test_get_app_id_for_page_no_name():
-    """Il n'y a ni ID ni Name → None."""
+    """There is no ID or Name -> None."""
     page = {"properties": {}}
     assert get_app_id_for_page(page) is None
 
 
-############################################################
-#                   update_notion_page                     #
-############################################################
+##########################################################
+#  update_notion_page                                    #
+##########################################################
 @patch("src.notion_api.requests.patch")
 def test_update_notion_page_success(mock_patch):
-    """Test d’un update Notion réussi."""
+    """Successful testing of a Notion update."""
 
     # Notion renvoie un JSON valide
     mock_patch.return_value.status_code = 200
@@ -145,7 +145,7 @@ def test_update_notion_page_success(mock_patch):
 
 @patch("src.notion_api.requests.patch")
 def test_update_notion_page_invalid_json(mock_patch):
-    """Notion renvoie du HTML ou un JSON invalide → doit gérer proprement."""
+    """Notion returns invalid HTML or JSON -> must handle properly."""
 
     mock_patch.return_value.status_code = 400
     mock_patch.return_value.json.side_effect = ValueError("not JSON")

@@ -9,40 +9,41 @@ if __name__ == "__main__":
     for page in pages:
         page_id = page["id"]
 
-        # Vérification plateforme
+        # Platform verification
         platform_prop = page["properties"].get("Platform", {})
         platform_value = None
 
         if platform_prop.get("select"):
             platform_value = platform_prop["select"]["name"]
 
-        # Si Platform != Steam, la page est ignorée
+        # If Platform != Steam, the page is ignored.
         if platform_value != "Steam":
-            print(f"⏭️ Page ignorée ({page_id}) — Platform = {platform_value}\n")
+            print(f"⏭️ Page ignored ({page_id}) — Platform = {platform_value}\n")
             continue
 
-        # Lecture de la colonne "ID"
+        # Reading the 'ID' column
         app_id = get_app_id_for_page(page)
 
-        # S'il n'y a pas d'ID du jeu, la page est ignorée
+        # If there is no game ID, the page is ignored
         if not app_id:
-            print(f"⚠️ ID absent pour la page {page_id}")
+            print(f"❌ ID missing for page {page_id}")
             continue
 
-        print(f"🔍 Récupération Steam pour app_id = {app_id}")
+        print(f"🔍 Steam recovery for app_id = {app_id}")
 
         game_data = get_steam_game_details(app_id)
 
-        # S'il n'y a pas de donnée du jeu, la page est ignorée
+        # If there is no game data, the page is ignored.
         if not game_data:
-            print(f"❌ Impossible d'obtenir les infos Steam pour {app_id}")
+            print(f"❌ Unable to obtain Steam information for {app_id}")
             continue
 
-        print(f"📥 Données récupérées : {game_data}")
+        print(f"📥 Data retrieved : {game_data}")
 
         update_notion_page(page_id, game_data)
 
-        print(f"✅ Page mise à jour : {page_id}\n")
+        print(f"✅ Page updated : {page_id}\n")
 
+        # Avoid rate limiting
         if game_data["released"]:
-            time.sleep(0.25)  # Evite rate limiting
+            time.sleep(0.25)

@@ -14,15 +14,15 @@ RAWG_CACHE = {}
 
 def best_rawg_match(results: List[Dict], original_name: str) -> Optional[Dict]:
     """
-    Sélectionne la meilleure correspondance RAWG basée sur la similarité.
+    Selects the best RAWG match based on similarity.
 
-    La comparaison utilise un ratio de ressemblance (SequenceMatcher)
-    entre le nom original et les noms renvoyés par RAWG.
+    The comparison uses a similarity ratio (SequenceMatcher)
+    between the original name and the names returned by RAWG.
 
-    :param results: Liste brute des jeux renvoyés par RAWG
-    :param original_name: Nom exact du jeu recherché
+    :param results: Raw list of games returned by RAWG
+    :param original_name: Exact name of the game you are looking for
 
-    :return: Le dictionnaire du jeu RAWG ayant le meilleur match, ou None si la qualité du match est trop faible
+    :return: The RAWG game dictionary with the best match or None if the match quality is too low
     """
     original_norm = normalize(original_name)
 
@@ -41,16 +41,16 @@ def best_rawg_match(results: List[Dict], original_name: str) -> Optional[Dict]:
 
 def extract_rawg_fields(game: Dict[str, Any]) -> Tuple[Optional[int], List[str], List[str]]:
     """
-    Extrait et sécurise les champs utiles de RAWG.
+    Extracts and secures useful fields from RAWG.
 
-    :param game: Objet RAWG représentant un jeu
+    :param game: RAWG object representing a game
 
     :return: Tuple:
             - playtime (Optional[int])
             - genres (List[str])
             - tags   (List[str])
     """
-    playtime = game.get("playtime")  # durée médiane
+    playtime = game.get("playtime")  # Median duration
 
     rawg_genres = game.get("genres") or []
     rawg_tags = game.get("tags") or []
@@ -63,12 +63,12 @@ def extract_rawg_fields(game: Dict[str, Any]) -> Tuple[Optional[int], List[str],
 
 def query_rawg(search_value, retries=3):
     """
-    Interroge l’API RAWG avec backoff exponentiel et gestion des erreurs.
+    Queries the RAWG API with exponential backoff and error handling.
 
-    :param search_value: Valeur de recherche (nom, slug, "steam <id>"...)
-    :param retries: Nombre de tentatives avant abandon
+    :param search_value: Search value (name, slug, 'steam <id>'...)
+    :param retries: Number of attempts before giving up
 
-    :return: Réponse RAWG ou None en cas d’échec
+    :return: RAWG or None response in case of failure
     """
     url = (
         f"https://api.rawg.io/api/games"
@@ -85,7 +85,7 @@ def query_rawg(search_value, retries=3):
         except Exception:
             pass
 
-        time.sleep((2 ** attempt) + random.random())  # backoff
+        time.sleep((2 ** attempt) + random.random())  # Backoff
 
     print(f"⚠️ RAWG failed after {retries} attempts for search='{search_value}'")
     return None
@@ -93,18 +93,18 @@ def query_rawg(search_value, retries=3):
 
 def get_rawg_data(game_name: str, steam_app_id: Optional[int] = None) -> Tuple[Optional[int], List[str], List[str]]:
     """
-    Recherche robuste des données d’un jeu dans RAWG.
+    Robust search for game data in RAWG.
 
-    Plusieurs stratégies sont tentées :
-    1. Nom original
-    2. Nom nettoyé (sans ponctuation)
-    3. Version slug
-    4. Recherche par Steam AppID (RAWG supporte ça !)
+    Several strategies are attempted:
+    1. Original name
+    2. Cleaned name (without punctuation)
+    3. Slug version
+    4. Search by Steam AppID
 
-    Les résultats sont mis en cache pour éviter de recharger RAWG plusieurs fois.
+    The results are cached to avoid reloading RAWG multiple times.
 
-    :param game_name: Nom du jeu
-    :param steam_app_id: Optionnel, améliore la précision
+    :param game_name: Name of the game
+    :param steam_app_id: Optional, improves accuracy
 
     :return: Tuple:
             - playtime (Optional[int])
@@ -115,7 +115,7 @@ def get_rawg_data(game_name: str, steam_app_id: Optional[int] = None) -> Tuple[O
     if cache_key in RAWG_CACHE:
         return RAWG_CACHE[cache_key]
 
-    # Try 1: Query direct avec le nom original
+    # 1. Direct query with the original name
     res = query_rawg(game_name)
 
     if not res or "results" not in res or not isinstance(res["results"], list):
@@ -127,7 +127,7 @@ def get_rawg_data(game_name: str, steam_app_id: Optional[int] = None) -> Tuple[O
                 RAWG_CACHE[cache_key] = extract_rawg_fields(match)
                 return RAWG_CACHE[cache_key]
 
-    # Try 2: Query avec nom nettoyé
+    # 2. Query with cleaned name
     cleaned_name = sanitize_title(game_name)
     if cleaned_name != game_name:
         res = query_rawg(cleaned_name)
@@ -137,7 +137,7 @@ def get_rawg_data(game_name: str, steam_app_id: Optional[int] = None) -> Tuple[O
                 RAWG_CACHE[cache_key] = extract_rawg_fields(match)
                 return RAWG_CACHE[cache_key]
 
-    # Try 3: Query “slug style”
+    # 3. Query 'slug style'
     slug = cleaned_name.replace(" ", "-")
     res = query_rawg(slug)
     if res and "results" in res and len(res["results"]) > 0:
@@ -146,7 +146,7 @@ def get_rawg_data(game_name: str, steam_app_id: Optional[int] = None) -> Tuple[O
             RAWG_CACHE[cache_key] = extract_rawg_fields(match)
             return RAWG_CACHE[cache_key]
 
-    # Try 4: Recherche via Steam App ID (RAWG comprend ça !)
+    # 4. Search via Steam App ID
     if steam_app_id:
         res = query_rawg(f"steam {steam_app_id}")
         if res and "results" in res and len(res["results"]) > 0:
@@ -155,26 +155,26 @@ def get_rawg_data(game_name: str, steam_app_id: Optional[int] = None) -> Tuple[O
                 RAWG_CACHE[cache_key] = extract_rawg_fields(match)
                 return RAWG_CACHE[cache_key]
 
-    # Échec total RAWG -> renvoyer valeurs vides
-    print(f"⚠️ RAWG n’a retourné aucun résultat pour : {game_name}")
+    # Total failure RAWG -> return empty values
+    print(f"⚠️ RAWG did not return any results for: {game_name}")
     return None, [], []
 
 
 def estimate_hltb_from_rawg(rawg_playtime: Optional[int], genres: List[str], tags: List[str]) -> Optional[float]:
     """
-    Estime une durée “HowLongToBeat” à partir des durées RAWG.
+    Estimates a duration 'HowLongToBeat' based on RAWG durations.
 
-    L’estimation applique un ratio intelligent selon :
-    - la durée brute
-    - les genres
-    - les tags (open-world, sandbox, horror...)
-    - des règles spéciales (jeux courts)
+    The estimate applies an intelligent ratio based on:
+    - gross duration
+    - genres
+    - tags (open-world, sandbox, horror, etc.)
+    - special rules (short games)
 
-    :param rawg_playtime: Durée RAWG (playtime)
-    :param genres: Genres RAWG
-    :param tags: Tags RAWG
+    :param rawg_playtime: RAWG duration (playtime)
+    :param genres: RAWG genres
+    :param tags: RAWG tags
 
-    :return: Durée estimée ou None
+    :return: Estimated duration or None
     """
     if rawg_playtime is None or rawg_playtime <= 0:
         return None
@@ -182,10 +182,10 @@ def estimate_hltb_from_rawg(rawg_playtime: Optional[int], genres: List[str], tag
     genres = [g.lower() for g in genres]
     tags = [t.lower() for t in tags]
 
-    # Ratio basé sur RAWG -> HLTB
+    # Ratio based on RAWG -> HLTB
     ratio = 2.5
 
-    # Protection sur les jeux courts
+    # Protection on short games
     if rawg_playtime <= 2:
         return round(rawg_playtime * 1.2, 1)
     elif rawg_playtime <= 3:
@@ -193,7 +193,7 @@ def estimate_hltb_from_rawg(rawg_playtime: Optional[int], genres: List[str], tag
     elif rawg_playtime <= 5:
         return round(rawg_playtime * 2.0, 1)
 
-    # Ratios selon genre principal
+    # Ratios by main genre
     if any(g in genres for g in ["rpg", "role-playing"]):
         ratio = 5.0
     elif any(g in genres for g in ["strategy"]):
@@ -209,7 +209,7 @@ def estimate_hltb_from_rawg(rawg_playtime: Optional[int], genres: List[str], tag
     elif any(g in genres for g in ["roguelike"]):
         ratio = 2.5
 
-    # survival sandbox long / survival horror court
+    # Long survival sandbox / short survival horror
     if any(t in tags for t in ["open world", "sandbox", "crafting", "exploration", "base building"]):
         ratio *= 3.5
     elif any(t in tags for t in ["survival", "horror"]):

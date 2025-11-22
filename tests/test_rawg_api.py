@@ -11,9 +11,9 @@ from src.rawg_api import (
 
 
 
-############################################################
-#  sanitize_title                                          #
-############################################################
+##########################################################
+#  sanitize_title                                        #
+##########################################################
 
 def test_sanitize_title_basic():
     assert sanitize_title("Halo: Infinite") == "halo infinite"
@@ -26,9 +26,9 @@ def test_sanitize_title_spaces():
 
 
 
-############################################################
-#  safe_get_json                                           #
-############################################################
+##########################################################
+#  safe_get_json                                         #
+##########################################################
 
 def test_safe_get_json_valid():
     mock_resp = MagicMock()
@@ -42,9 +42,9 @@ def test_safe_get_json_invalid():
 
 
 
-############################################################
-#  extract_rawg_fields                                     #
-############################################################
+##########################################################
+#  extract_rawg_fields                                   #
+##########################################################
 
 def test_extract_rawg_fields_normal():
     game = {
@@ -65,9 +65,9 @@ def test_extract_rawg_fields_empty():
     assert tags == []
 
 
-############################################################
-#  best_rawg_match                                         #
-############################################################
+##########################################################
+#  best_rawg_match                                       #
+##########################################################
 
 def test_best_rawg_match_basic():
     results = [
@@ -76,7 +76,7 @@ def test_best_rawg_match_basic():
         {"name": "Something Else"}
     ]
     match = best_rawg_match(results, "Hades")
-    assert match["name"] == "Hadex"   # meilleure similarité
+    assert match["name"] == "Hadex"   # Best similarity
 
 def test_best_rawg_match_below_threshold():
     results = [{"name": "TotallyDifferent"}]
@@ -85,13 +85,13 @@ def test_best_rawg_match_below_threshold():
 
 
 
-############################################################
-#  get_rawg_data — mocks                                   #
-############################################################
+##########################################################
+#  get_rawg_data — mocks                                 #
+##########################################################
 
 @patch("src.rawg_api.requests.get")
 def test_rawg_direct_match(mock_get):
-    """Test du scénario principal : RAWG renvoie une liste correcte."""
+    """Main scenario test: RAWG returns a correct list."""
     mock_get.return_value.json.return_value = {
         "results": [
             {"name": "Hades", "playtime": 10, "genres": [], "tags": []}
@@ -115,7 +115,7 @@ def test_rawg_no_results(mock_get):
 
 @patch("src.rawg_api.requests.get")
 def test_rawg_invalid_json(mock_get):
-    """RAWG renvoie du HTML ou JSON cassé."""
+    """RAWG returns broken HTML or JSON."""
     mock_get.return_value.json.side_effect = ValueError("Invalid JSON")
     playtime, genres, tags = get_rawg_data("Hades", 1145360)
     assert playtime is None
@@ -123,12 +123,12 @@ def test_rawg_invalid_json(mock_get):
 
 @patch("src.rawg_api.requests.get")
 def test_rawg_fallback_cleaned_name(mock_get):
-    """Le premier appel échoue mais pas celui avec sanitize_title."""
-    # 1er appel → HTML invalide
+    """The first call fails, but not the one with sanitize_title."""
+    # 1st call -> Invalid HTML
     invalid = MagicMock()
     invalid.json.side_effect = ValueError("No JSON")
 
-    # 2ème appel → bon JSON
+    # 2nd call -> good JSON
     valid = MagicMock()
     valid.json.return_value = {
         "results": [{"name": "Hades Cleaned", "playtime": 9}]
@@ -142,7 +142,7 @@ def test_rawg_fallback_cleaned_name(mock_get):
 
 @patch("src.rawg_api.requests.get")
 def test_rawg_fallback_slug(mock_get):
-    """Nom nettoyé échoue → slug réussit"""
+    """Cleaned name fails -> slug succeeds"""
     bad = MagicMock()
     bad.json.return_value = {"results": []}
 
@@ -159,7 +159,7 @@ def test_rawg_fallback_slug(mock_get):
 
 @patch("src.rawg_api.requests.get")
 def test_rawg_fallback_steam_id(mock_get):
-    """Fallback sur 'steam <id>'"""
+    """Fallback to 'steam <id>'"""
     empty = MagicMock()
     empty.json.return_value = {"results": []}
 
@@ -168,7 +168,7 @@ def test_rawg_fallback_steam_id(mock_get):
         "results": [{"name": "Hades Steam", "playtime": 12}]
     }
 
-    # 3 tentatives échouent → 4e avec Steam ID réussit
+    # 3 attempts fail -> 4th attempt with Steam ID succeeds
     mock_get.side_effect = [empty, empty, empty, good]
 
     playtime, genres, tags = get_rawg_data("Hades", 1145360)
@@ -177,7 +177,7 @@ def test_rawg_fallback_steam_id(mock_get):
 
 @patch("src.rawg_api.requests.get")
 def test_rawg_cache(mock_get):
-    """Deux appels identiques → 1 seul appel réseau."""
+    """Two identical calls -> 1 single network call."""
     mock_get.return_value.json.return_value = {
         "results": [{"name": "Hades", "playtime": 10}]
     }
@@ -185,5 +185,5 @@ def test_rawg_cache(mock_get):
     get_rawg_data("Hades", 1145360)
     get_rawg_data("Hades", 1145360)
 
-    # Une seule requête réalisée
+    # A single query performed
     assert mock_get.call_count == 1

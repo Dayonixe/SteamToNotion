@@ -19,41 +19,41 @@ notion_headers = {
 
 def get_app_id_for_page(page: Dict[str, Any]) -> Optional[int]:
     """
-    Récupère l'AppID Steam d'une page Notion.
+    Retrieves the Steam AppID from a Notion page.
 
-    Priorité :
-    1. Si la propriété "ID" contient déjà un numéro valide -> utiliser.
-    2. Sinon, récupérer le nom ("Name") et effectuer une recherche Steam.
+    Priority:
+    1. If the 'ID' property already contains a valid number -> use it.
+    2. Otherwise, retrieve the name ('Name') and perform a Steam search.
 
-    :param page: Objet de page Notion issu de l’API
+    :param page: Page object Notion from the API
 
-    :return: AppID Steam, ou None si introuvable
+    :return: Steam AppID or None if not found
     """
     id_prop = page["properties"].get("ID")
 
-    # Si ID présent et valide
+    # 1. If 'ID' present and valid
     if id_prop and id_prop["number"]:
         return id_prop["number"]
 
-    # Sinon rechercher via "Name"
+    # 2. Otherwise, search via 'Name'
     name_prop = page["properties"].get("Name", {})
     if "title" in name_prop and len(name_prop["title"]) > 0:
         game_name = name_prop["title"][0]["plain_text"]
         app_id = search_app_id_by_name(game_name)
         if app_id:
-            print(f"🔎 Trouvé app_id = {app_id} via le nom '{game_name}'")
+            print(f"📥 Found app_id = {app_id} via name '{game_name}'")
             return app_id
         else:
-            print(f"⚠️ Aucun app_id trouvé pour '{game_name}'")
+            print(f"❌ No app_id found for '{game_name}'")
 
     return None
 
 
 def get_notion_pages() -> List[Dict[str, Any]]:
     """
-    Récupère toutes les pages d'une database Notion (pagination incluse).
+    Retrieves all pages from a Notion database (including pagination).
 
-    :return: Liste complète des pages de la DB
+    :return: Complete list of pages in the database
     """
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
 
@@ -75,16 +75,16 @@ def get_notion_pages() -> List[Dict[str, Any]]:
 
 def update_notion_page(page_id: str, game: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
-    Met à jour une page Notion avec les informations d'un jeu.
+    Updates a Notion page with information about a game.
 
-    :param page_id: ID Notion de la page
-    :param game: Données complètes du jeu (Steam + HLTB estimé)
+    :param page_id: Notion page ID
+    :param game: Complete game data (Steam + estimated HLTB)
 
-    :return: Réponse JSON de Notion, ou None si non JSON
+    :return: JSON response from Notion or None if not JSON
     """
     url = f"https://api.notion.com/v1/pages/{page_id}"
 
-    # Évite les valeurs non valides
+    # Avoid invalid values
     properties = {
         "Name": {
             "title": [{"text": {"content": game["name"]}}]
@@ -109,7 +109,7 @@ def update_notion_page(page_id: str, game: Dict[str, Any]) -> Optional[Dict[str,
         }
     }
 
-    # Cas spécial Notion : release_date doit être None OU une date ISO
+    # Notion special case: release_date must be None OR an ISO date
     if game["release_date"] is None:
         properties["Release date"] = {"date": None}
     else:
@@ -128,13 +128,13 @@ def update_notion_page(page_id: str, game: Dict[str, Any]) -> Optional[Dict[str,
     }
     response = requests.patch(url, headers=notion_headers, data=json.dumps(data))
 
-    # Debug utile :
+    # Useful debugging
     if response.status_code >= 400:
-        print("⚠️ Erreur Notion :", response.text)
+        print("⚠️ Notion error:", response.text)
 
     try:
         return response.json()
     except Exception:
-        print("❌ Notion a renvoyé une réponse non JSON. Réponse brute :")
+        print("❌ Notion returned a non-JSON response. Raw response:")
         print(response.text)
         return None

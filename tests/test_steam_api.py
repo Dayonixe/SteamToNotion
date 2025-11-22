@@ -5,9 +5,9 @@ from src.steam_api import search_app_id_by_name
 
 
 
-##################################################
-#  search_app_id_by_name — cas de base           #
-##################################################
+##########################################################
+#  search_app_id_by_name — base case                     #
+##########################################################
 
 @patch("src.steam_api.requests.get")
 def test_search_app_id_exact_match(mock_get):
@@ -42,9 +42,9 @@ def test_search_app_id_similarity(mock_get):
 
 
 
-##################################################
-#  search_app_id_by_name — cas d’erreurs         #
-##################################################
+##########################################################
+#  search_app_id_by_name — cases of errors               #
+##########################################################
 
 @patch("src.steam_api.requests.get")
 def test_search_app_id_invalid_json(mock_get):
@@ -67,14 +67,14 @@ def test_search_app_id_similarity_too_low(mock_get):
         {"name": "TotallyDifferent", "appid": 987654},
     ]
 
-    # Aucune similarité > 0.3
+    # No similarity > 0.3
     assert search_app_id_by_name("Hades") is None
 
 
 
-##################################################
-#  Cas avancés — suites & anti-suites            #
-##################################################
+##########################################################
+#  Advanced cases — consequences & counter-consequences  #
+##########################################################
 
 @patch("src.steam_api.requests.get")
 def test_search_app_id_avoid_wrong_sequel(mock_get):
@@ -83,7 +83,7 @@ def test_search_app_id_avoid_wrong_sequel(mock_get):
         {"name": "Game", "appid": 100}
     ]
 
-    # On cherche Game → pas Game II
+    # We are looking for 'Game' -> not 'Game II'
     assert search_app_id_by_name("Game") == 100
 
 
@@ -99,9 +99,9 @@ def test_search_app_id_accept_matching_sequel(mock_get):
 
 
 
-##################################################
-#  Cas avancés — nettoyage & variantes           #
-##################################################
+##########################################################
+#  Advanced cases — cleaning & variants                  #
+##########################################################
 
 @patch("src.steam_api.requests.get")
 def test_search_app_id_handles_colons(mock_get):
@@ -110,7 +110,7 @@ def test_search_app_id_handles_colons(mock_get):
         {"name": "Halo: Infinite", "appid": 456}
     ]
 
-    # Le normalize rend les deux proches
+    # Normalisation brings the two closer together
     assert search_app_id_by_name("Halo: Infinite") in {123, 456}
 
 
@@ -122,5 +122,5 @@ def test_search_app_id_unicode(mock_get):
         {"name": "Cafe World", "appid": 20},
     ]
 
-    # normalize enlève les accents → choix cohérent
+    # normalize removes accents -> consistent choice
     assert search_app_id_by_name("Café World") in {10, 20}
