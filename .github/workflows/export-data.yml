@@ -2,7 +2,7 @@ name: Export Steam to Notion (daily)
 
 on:
   schedule:
-    - cron: "55 16 * * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
