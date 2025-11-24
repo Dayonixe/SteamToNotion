@@ -31,4 +31,4 @@ jobs:
 
     - name: Run export script
       run: |
-        python src/export_data.py
+        python -m src.export_data
